@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agendamento Laboratório Escolar</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+ #loginArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+    .container {
+      background: #fff;
+      padding: 1.5rem;
+      max-width: 90%;
+      width: 100%;
+      margin: auto;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      font-size: 1.5rem;
+    }
+
+    form label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    form input,
+    form select,
+    form button {
+      width: 100%;
+      padding: 0.7rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      border-radius: 0.4rem;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    button {
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    .info {
+      background: #ffefc2;
+      padding: 1rem;
+      border: 1px solid #ffd700;
+      border-radius: 0.5rem;
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    .ocupado {
+      background: #f8d7da;
+      padding: 0.5rem;
+      border-radius: 0.3rem;
+      margin: 0.3rem 0;
+      font-size: 0.9rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background: #eee;
+    }
+
+    .acoes button {
+      margin-right: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
+    }
+
+    .editar {
+      background-color: #2196f3;
+      color: white;
+    }
+
+    .excluir {
+      background-color: #f44336;
+      color: white;
+    }
+
+    /* Responsivo para telas pequenas */
+    @media (max-width: 600px) {
+      h1, h2 {
+        font-size: 1.25rem;
+      }
+
+      .info, .ocupado {
+        font-size: 0.9rem;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      form input, form select, form button {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+
+  <!-- Bibliotecas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <!-- Área de login -->
+  <div class="container" id="loginArea">
+ 
+    <form id="loginForm">
+      <label for="usuario">Administrador:</label>
+      <input type="text" id="usuario" required />
+
+      <label for="senha">Senha:</label>
+      <input type="password" id="senha" required />
+
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
+
+  <!-- Área de agendamento -->
+  <div class="container" id="agendamentoArea" style="display: none;">
+    <h1>Agendamento Laboratório Informática</h1>
+    <form id="agendamentoForm">
+      <label for="turma">Turma:</label>
+      <input type="text" id="turma" required />
+
+      <label for="materia">Matéria:</label>
+      <input type="text" id="materia" required />
+
+      <label for="professor">Professor:</label>
+      <input type="text" id="professor" required />
+
+      <label for="data">Data(s):</label>
+      <input type="text" id="data" placeholder="Selecione uma ou mais datas" required />
+
+      <label for="horario">Horário:</label>
+      <select id="horario" required></select>
+
+      <button type="submit" id="btnSubmit">Agendar</button>
+    </form>
+
+    <div class="info">
+      <p><strong>Aviso:</strong> Horários da tarde são reservados para:</p>
+      <ul>
+        <li><strong>Terça e Quarta:</strong> Elefante Letrado</li>
+        <li><strong>Quinta e Sexta:</strong> Matific</li>
+      </ul>
+    </div>
+
+    <h2>Horários da Tarde Ocupados</h2>
+    <ul id="ocupados">
+      <li class="ocupado">12:40</li>
+      <li class="ocupado">13:35</li>
+      <li class="ocupado">14:30</li>
+      <li class="ocupado">15:45</li>
+      <li class="ocupado">15:10</li>
+      <li class="ocupado">16:04</li>
+      <li class="ocupado">17:30</li>
+    </ul>
+
+    <h2>Agendamentos Realizados</h2>
+    <div style="overflow-x: auto;">
+      <table id="tabelaAgendamentos">
+        <thead>
+          <tr>
+            <th>Turma</th>
+            <th>Matéria</th>
+            <th>Professor</th>
+            <th>Data</th>
+            <th>Horário</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Script (mantido o mesmo do seu exemplo) -->
+  <script>
+    // Configuração Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyA6ylG57hZeR_SnZi0Sw087zRWogglm7bQ",
+      authDomain: "laboratorio-informatica.firebaseapp.com",
+      projectId: "laboratorio-informatica",
+      storageBucket: "laboratorio-informatica.firebasestorage.app",
+      messagingSenderId: "651834452312",
+      appId: "1:651834452312:web:04d5323f22b7a513badd2d"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    document.getElementById("loginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const usuario = document.getElementById("usuario").value.trim();
+      const senha = document.getElementById("senha").value.trim();
+
+      if (usuario === "admin" && senha === "1234") {
+        window.location.href = "agendamento.5.html";
+      } else {
+        alert("Usuário ou senha inválidos!");
+      }
+    });
+
+    const form = document.getElementById("agendamentoForm");
+    const selectHorario = document.getElementById("horario");
+    const tbody = document.querySelector("#tabelaAgendamentos tbody");
+
+    const horariosManha = ["07:00", "08:00", "09:00", "09:20 ás 12:00", "10:00", "11:00", "12:00"];
+    horariosManha.forEach(h => {
+      const opt = document.createElement("option");
+      opt.value = h;
+      opt.textContent = h;
+      selectHorario.appendChild(opt);
+    });
+
+    flatpickr("#data", {
+      mode: "multiple",
+      dateFormat: "Y-m-d",
+      minDate: "today",
+      locale: "pt"
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const turma = document.getElementById("turma").value.trim();
+      const materia = document.getElementById("materia").value.trim();
+      const professor = document.getElementById("professor").value.trim();
+      const datasRaw = document.getElementById("data").value;
+      const horario = document.getElementById("horario").value;
+
+      if (!datasRaw) {
+        alert("Por favor, selecione pelo menos uma data.");
+        return;
+      }
+
+      const datas = datasRaw.split(",").map(d => d.trim());
+      let conflitos = [];
+      let sucesso = [];
+
+      for (const data of datas) {
+        const chave = data + "_" + horario;
+        const snapshot = await db.ref("agendamentos/" + chave).once("value");
+
+        if (snapshot.exists()) {
+          conflitos.push(formatarData(data));
+        } else {
+          await db.ref("agendamentos/" + chave).set({ turma, materia, professor, data, horario });
+          sucesso.push(formatarData(data));
+        }
+      }
+
+      let msg = "";
+      if (sucesso.length) msg += `Agendamentos realizados para: ${sucesso.join(", ")}.\n`;
+      if (conflitos.length) msg += `Conflito nas datas: ${conflitos.join(", ")} no horário ${horario}.`;
+      alert(msg);
+      form.reset();
+      carregarAgendamentos();
+    });
+
+    function carregarAgendamentos() {
+      tbody.innerHTML = "";
+      db.ref("agendamentos").once("value", (snapshot) => {
+        snapshot.forEach(child => {
+          const d = child.val();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${d.turma}</td>
+            <td>${d.materia}</td>
+            <td>${d.professor}</td>
+            <td>${formatarData(d.data)}</td>
+            <td>${d.horario}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+
+    function formatarData(dataISO) {
+      const partes = dataISO.split("-");
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+  </script>
+</body>
+</html>
