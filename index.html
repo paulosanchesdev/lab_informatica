@@ -142,24 +142,31 @@
     th, td {
       padding: 6px;
     }
+
+    .tabela-responsiva table {
+      min-width: 500px;
+    }
   }
 
-
+  .tabela-responsiva {
+    width: 100%;
+    overflow-x: auto;
+  }
 
   .btn-login {
-  background-color: #2196f3;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 5px;
-  text-decoration: none;
-  font-weight: bold;
-  font-size: 0.95rem;
-  transition: background-color 0.3s ease;
-}
+    background-color: #2196f3;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.95rem;
+    transition: background-color 0.3s ease;
+  }
 
-.btn-login:hover {
-  background-color: #0b7dda;
-}
+  .btn-login:hover {
+    background-color: #0b7dda;
+  }
 
 </style>
 
@@ -172,16 +179,12 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
-    
 
    <div class="container">
-  <div style="text-align: right; margin-bottom: 10px;">
-    <a href="pages/area visual e de login.html" class="btn-login">🔐 Administrador</a>
-  </div>
+    <div style="text-align: right; margin-bottom: 10px;">
+      <a href="pages/area visual e de login.html" class="btn-login">🔐 Administrador</a>
+    </div>
 
-
-
-  <div class="container">
     <h1>Agendamento Laboratório Informática</h1>
     <form id="agendamentoForm">
       <label for="turma">Turma:</label>
@@ -222,19 +225,20 @@
     </ul>
 
     <h2>Agendamentos Realizados</h2>
-    <table id="tabelaAgendamentos">
-      <thead>
-        <tr>
-          <th>Turma</th>
-          <th>Matéria</th>
-          <th>Professor</th>
-          <th>Data</th>
-          <th>Horário</th>
-          
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="tabela-responsiva">
+      <table id="tabelaAgendamentos">
+        <thead>
+          <tr>
+            <th>Turma</th>
+            <th>Matéria</th>
+            <th>Professor</th>
+            <th>Data</th>
+            <th>Horário</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
@@ -256,7 +260,6 @@
     const tbody = document.querySelector("#tabelaAgendamentos tbody");
     const btnSubmit = document.getElementById("btnSubmit");
 
-    // Carregar opções de horário (manhã)
     const horariosManha = ["07:00", "08:00", "09:00","09:20 ás 12:00", "10:00", "11:00", "12:00"];
     horariosManha.forEach(h => {
       const opt = document.createElement("option");
@@ -265,15 +268,13 @@
       selectHorario.appendChild(opt);
     });
 
-    // Inicializar flatpickr com seleção múltipla para #data
     flatpickr("#data", {
       mode: "multiple",
       dateFormat: "Y-m-d",
       minDate: "today",
-      locale: "pt" // pode ajustar se desejar
+      locale: "pt"
     });
 
-    // Variáveis para edição (não alterado para múltiplas datas, pois edição múltipla é complexa)
     let modoEdicao = false;
     let idEmEdicao = "";
 
@@ -296,7 +297,6 @@
         return;
       }
 
-      // Datas vem como string separada por vírgula, ex: "2025-05-30,2025-05-31"
       const datas = datasRaw.split(",").map(d => d.trim());
 
       let agendamentosConflito = [];
@@ -334,7 +334,6 @@
       db.ref("agendamentos").once("value", (snapshot) => {
         snapshot.forEach(child => {
           const dados = child.val();
-          const chave = child.key;
           const tr = document.createElement("tr");
 
           tr.innerHTML = `
@@ -343,22 +342,10 @@
             <td>${dados.professor}</td>
             <td>${formatarData(dados.data)}</td>
             <td>${dados.horario}</td>
-           
-           
-            </td>
           `;
           tbody.appendChild(tr);
         });
       });
-    }
-
-    function deletarAgendamento(chave) {
-      if (confirm("Deseja realmente excluir este agendamento?")) {
-        db.ref("agendamentos/" + chave).remove().then(() => {
-          alert("Agendamento excluído com sucesso.");
-          carregarAgendamentos();
-        });
-      }
     }
 
     function formatarData(dataISO) {
@@ -370,3 +357,4 @@
   </script>
 </body>
 </html>
+
