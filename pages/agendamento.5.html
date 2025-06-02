@@ -126,6 +126,14 @@
         padding-top: 20px;
       }
     }
+
+    #loginContainer {
+      display: block;
+    }
+
+    #mainContent {
+      display: none;
+    }
   </style>
 
   <!-- flatpickr -->
@@ -138,7 +146,20 @@
 </head>
 <body>
 
-  <div class="container">
+  <div class="container" id="loginContainer">
+    <h1>Login do Administrador</h1>
+    <form id="loginForm">
+      <label for="usuario">Usuário:</label>
+      <input type="text" id="usuario" required />
+
+      <label for="senha">Senha:</label>
+      <input type="password" id="senha" required />
+
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
+
+  <div class="container" id="mainContent">
     <h1>Agendamento Laboratório Informática</h1>
     <form id="agendamentoForm">
       <label for="turma">Turma:</label>
@@ -308,7 +329,20 @@
       return `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
 
-    window.onload = carregarAgendamentos;
+    // Login
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const usuario = document.getElementById("usuario").value;
+      const senha = document.getElementById("senha").value;
+
+      if (usuario === "admin" && senha === "1234") {
+        document.getElementById("loginContainer").style.display = "none";
+        document.getElementById("mainContent").style.display = "block";
+        carregarAgendamentos();
+      } else {
+        alert("Usuário ou senha incorretos.");
+      }
+    });
   </script>
 </body>
 </html>
