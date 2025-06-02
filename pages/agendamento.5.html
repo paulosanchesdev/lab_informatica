@@ -134,6 +134,19 @@
     #mainContent {
       display: none;
     }
+
+
+
+   .tabela-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  table {
+    min-width: 600px; /* Garante que a tabela não fique apertada demais */
+  }
+}
   </style>
 
   <!-- flatpickr -->
@@ -200,7 +213,8 @@
     </ul>
 
     <h2>Agendamentos Realizados</h2>
-    <table id="tabelaAgendamentos">
+<div class="tabela-wrapper">
+  <table id="tabelaAgendamentos">
       <thead>
         <tr>
           <th>Turma</th>
