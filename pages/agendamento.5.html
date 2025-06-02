@@ -215,134 +215,131 @@
     </table>
   </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyA6ylG57hZeR_SnZi0Sw087zRWogglm7bQ",
-      authDomain: "laboratorio-informatica.firebaseapp.com",
-      projectId: "laboratorio-informatica",
-      storageBucket: "laboratorio-informatica.firebasestorage.app",
-      messagingSenderId: "651834452312",
-      appId: "1:651834452312:web:04d5323f22b7a513badd2d"
-    };
+ <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6ylG57hZeR_SnZi0Sw087zRWogglm7bQ",
+    authDomain: "laboratorio-informatica.firebaseapp.com",
+    projectId: "laboratorio-informatica",
+    storageBucket: "laboratorio-informatica.firebasestorage.app",
+    messagingSenderId: "651834452312",
+    appId: "1:651834452312:web:04d5323f22b7a513badd2d"
+  };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    const form = document.getElementById("agendamentoForm");
-    const selectHorario = document.getElementById("horario");
-    const tbody = document.querySelector("#tabelaAgendamentos tbody");
+  const form = document.getElementById("agendamentoForm");
+  const selectHorario = document.getElementById("horario");
+  const tbody = document.querySelector("#tabelaAgendamentos tbody");
 
-    const horariosManha = ["07:00", "08:00", "09:00","09:20 ás 12:00", "10:00", "11:00", "12:00"];
-    horariosManha.forEach(h => {
-      const opt = document.createElement("option");
-      opt.value = h;
-      opt.textContent = h;
-      selectHorario.appendChild(opt);
+  // Horários permitidos pela manhã
+  const horariosPermitidos = ["07:00", "08:00", "09:00", "09:20 ás 12:00", "10:00", "11:00", "12:00"];
+
+  // Preencher o select apenas com horários permitidos
+  horariosPermitidos.forEach(h => {
+    const opt = document.createElement("option");
+    opt.value = h;
+    opt.textContent = h;
+    selectHorario.appendChild(opt);
+  });
+
+  // Flatpickr (datas múltiplas)
+  flatpickr("#data", {
+    mode: "multiple",
+    dateFormat: "Y-m-d",
+    minDate: "today",
+    locale: "pt"
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const turma = document.getElementById("turma").value.trim();
+    const materia = document.getElementById("materia").value.trim();
+    const professor = document.getElementById("professor").value.trim();
+    const datasRaw = document.getElementById("data").value;
+    const horario = document.getElementById("horario").value;
+
+    // Verifica se o horário está entre os permitidos
+    if (!horariosPermitidos.includes(horario)) {
+      alert("Horário selecionado não é permitido. Escolha um horário da manhã.");
+      return;
+    }
+
+    if (!datasRaw) {
+      alert("Por favor, selecione pelo menos uma data.");
+      return;
+    }
+
+    const datas = datasRaw.split(",").map(d => d.trim());
+    let agendamentosConflito = [];
+    let agendamentosSucesso = [];
+
+    for (const data of datas) {
+      const chave = data + "_" + horario;
+      const snapshot = await db.ref("agendamentos/" + chave).once("value");
+
+      if (snapshot.exists()) {
+        agendamentosConflito.push(formatarData(data));
+        continue;
+      }
+
+      await db.ref("agendamentos/" + chave).set({ turma, materia, professor, data, horario });
+      agendamentosSucesso.push(formatarData(data));
+    }
+
+    let msg = "";
+    if (agendamentosSucesso.length > 0) {
+      msg += `✅ Agendamentos realizados para: ${agendamentosSucesso.join(", ")}.\n`;
+    }
+    if (agendamentosConflito.length > 0) {
+      msg += `⚠️ Conflitos nas datas: ${agendamentosConflito.join(", ")} no horário ${horario}.`;
+    }
+
+    alert(msg);
+    form.reset();
+    carregarAgendamentos();
+  });
+
+  function carregarAgendamentos() {
+    tbody.innerHTML = "";
+    db.ref("agendamentos").once("value", (snapshot) => {
+      snapshot.forEach(child => {
+        const dados = child.val();
+        const chave = child.key;
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${dados.turma}</td>
+          <td>${dados.materia}</td>
+          <td>${dados.professor}</td>
+          <td>${formatarData(dados.data)}</td>
+          <td>${dados.horario}</td>
+          <td class="acoes">
+            <button class="excluir" onclick="deletarAgendamento('${chave}')">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     });
+  }
 
-    flatpickr("#data", {
-      mode: "multiple",
-      dateFormat: "Y-m-d",
-      minDate: "today",
-      locale: "pt"
-    });
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const turma = document.getElementById("turma").value.trim();
-      const materia = document.getElementById("materia").value.trim();
-      const professor = document.getElementById("professor").value.trim();
-      const datasRaw = document.getElementById("data").value;
-      const horario = document.getElementById("horario").value;
-
-      if (!datasRaw) {
-        alert("Por favor, selecione pelo menos uma data.");
-        return;
-      }
-
-      const datas = datasRaw.split(",").map(d => d.trim());
-
-      let agendamentosConflito = [];
-      let agendamentosSucesso = [];
-
-      for (const data of datas) {
-        const chave = data + "_" + horario;
-
-        const snapshot = await db.ref("agendamentos/" + chave).once("value");
-        if (snapshot.exists()) {
-          agendamentosConflito.push(formatarData(data));
-          continue;
-        }
-
-        await db.ref("agendamentos/" + chave).set({ turma, materia, professor, data, horario });
-        agendamentosSucesso.push(formatarData(data));
-      }
-
-      let msg = "";
-      if (agendamentosSucesso.length > 0) {
-        msg += `Agendamentos realizados para: ${agendamentosSucesso.join(", ")}.\n`;
-      }
-      if (agendamentosConflito.length > 0) {
-        msg += `Conflitos encontrados nas datas: ${agendamentosConflito.join(", ")} no horário ${horario}.`;
-      }
-
-      alert(msg);
-      form.reset();
-      carregarAgendamentos();
-    });
-
-    function carregarAgendamentos() {
-      tbody.innerHTML = "";
-      db.ref("agendamentos").once("value", (snapshot) => {
-        snapshot.forEach(child => {
-          const dados = child.val();
-          const chave = child.key;
-          const tr = document.createElement("tr");
-
-          tr.innerHTML = `
-            <td>${dados.turma}</td>
-            <td>${dados.materia}</td>
-            <td>${dados.professor}</td>
-            <td>${formatarData(dados.data)}</td>
-            <td>${dados.horario}</td>
-            <td class="acoes">
-              <button class="excluir" onclick="deletarAgendamento('${chave}')">Excluir</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
+  function deletarAgendamento(chave) {
+    if (confirm("Deseja realmente excluir este agendamento?")) {
+      db.ref("agendamentos/" + chave).remove().then(() => {
+        alert("Agendamento excluído.");
+        carregarAgendamentos();
       });
     }
+  }
 
-    function deletarAgendamento(chave) {
-      if (confirm("Deseja realmente excluir este agendamento?")) {
-        db.ref("agendamentos/" + chave).remove().then(() => {
-          alert("Agendamento excluído.");
-          carregarAgendamentos();
-        });
-      }
-    }
+  function formatarData(dataISO) {
+    const partes = dataISO.split("-");
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
 
-    function formatarData(dataISO) {
-      const partes = dataISO.split("-");
-      return `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
+  window.onload = carregarAgendamentos;
+</script>
 
-    // Login
-    document.getElementById("loginForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const usuario = document.getElementById("usuario").value;
-      const senha = document.getElementById("senha").value;
-
-      if (usuario === "admin" && senha === "1234") {
-        document.getElementById("loginContainer").style.display = "none";
-        document.getElementById("mainContent").style.display = "block";
-        carregarAgendamentos();
-      } else {
-        alert("Usuário ou senha incorretos.");
-      }
-    });
-  </script>
 </body>
 </html>
